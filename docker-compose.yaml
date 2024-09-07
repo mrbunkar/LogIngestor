@@ -1,0 +1,13 @@
+version : "3.3"
+
+services:
+  mongo:
+    image: mongo
+    restart: always
+    container_name: mongo-container
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mrbunkar
+      MONGO_INITDB_ROOT_PASSWORD: changeme
+      #MONGODB_AUTH_DATABASE: admin
+    ports:
+      - "27017:27017"
