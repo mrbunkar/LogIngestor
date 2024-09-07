@@ -5,13 +5,26 @@ import (
 	"log"
 	"logIngestor/logIngestor/log/database"
 	"net"
+	"sync"
 )
+
+type TcpPeer struct {
+	net.Conn
+	wg sync.WaitGroup
+}
+
+func (peer *TcpPeer) Addres() string {
+	return peer.LocalAddr().String()
+}
 
 type TcpServer struct {
 	ListenAddr string
 	DbClient   database.ClientDB
 	filter     chan string
 	quitch     chan struct{}
+
+	LockPeer sync.Mutex
+	peer     map[string]*TcpPeer
 }
 
 func NewTCPServer(listenAddr string, mongoClient *database.MongoClient) *TcpServer {
@@ -21,6 +34,14 @@ func NewTCPServer(listenAddr string, mongoClient *database.MongoClient) *TcpServ
 		filter:     make(chan string),
 		quitch:     make(chan struct{}),
 	}
+}
+
+func (ts *TcpServer) OnPeer(peer *TcpPeer) error {
+	ts.LockPeer.Lock()
+	defer ts.LockPeer.Unlock()
+
+	ts.peer[peer.Addres()] = peer
+	return nil
 }
 
 func (ts *TcpServer) Close() error {
