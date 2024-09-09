@@ -3,6 +3,7 @@ package logtype
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -10,10 +11,10 @@ import (
 type Log struct {
 	Level      string            `json:"level" bson:"level"`
 	Message    string            `json:"message" bson:"message"`
-	ResourceId string            `json:"resource_id" bson:"resource_id"`
-	Timestamp  string            `json:"timestamp" bson:"timestamp"`
-	TraceId    string            `json:"trace_id" bson:"trace_id"`
-	SpanId     string            `json:"span_id" bson:"span_id"`
+	ResourceId string            `json:"resourceId" bson:"resourceId"`
+	Timestamp  time.Time         `json:"timestamp" bson:"timestamp"` // Change to time.Time
+	TraceId    string            `json:"traceId" bson:"traceId"`
+	SpanId     string            `json:"spanId" bson:"spanId"`
 	Commit     string            `json:"commit" bson:"commit"`
 	Metadata   map[string]string `json:"metadata" bson:"metadata"`
 }

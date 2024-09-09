@@ -7,6 +7,9 @@ import (
 	"logIngestor/logIngestor/log/database"
 	"logIngestor/logIngestor/log/logtype"
 	"net/http"
+	"strings"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 const (
@@ -64,13 +67,13 @@ func (s *HTTPServer) AddLogHandler(w http.ResponseWriter, r *http.Request) {
 	logEntry := &logtype.Log{}
 	err := json.NewDecoder(r.Body).Decode(logEntry)
 	if err != nil {
-		http.Error(w, "Payload is wrong: "+err.Error(), StatusBadRequest)
+		http.Error(w, "Invalid request payload: "+err.Error(), StatusBadRequest)
 		return
 	}
-
+	fmt.Println(logEntry)
 	err = s.DbClient.AddOne(logEntry)
 	if err != nil {
-		http.Error(w, "Failed to write to MongoDB", StatusFailedDependency)
+		http.Error(w, "Failed to retrieve logs from the database", StatusFailedDependency)
 		return
 	}
 
@@ -79,8 +82,8 @@ func (s *HTTPServer) AddLogHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPServer) GetLogHandler(w http.ResponseWriter, r *http.Request) {
-	// Implement logic to retrieve logs
 
+	// Implement logic to retrieve logs
 	// @TODO add a validator to validate the log filters
 
 	if r.Method != http.MethodGet {
@@ -94,7 +97,19 @@ func (s *HTTPServer) GetLogHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log, err := s.DbClient.GetOne(filter)
+	// Parse the filter into a BSON document
+	// @TODO validator{
+	filters := strings.Split(filter, "&")
+	bsonFilter := bson.M{}
+	for _, f := range filters {
+		parts := strings.Split(f, ":")
+		if len(parts) == 2 {
+			bsonFilter[parts[0]] = parts[1]
+		}
+	}
+
+	//}
+	log, err := s.DbClient.GetOne(bsonFilter)
 	if err != nil {
 		http.Error(w, "Failed to read from MongoDB. Error: "+err.Error(), http.StatusFailedDependency)
 		return
