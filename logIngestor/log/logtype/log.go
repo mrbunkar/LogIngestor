@@ -19,7 +19,7 @@ type Log struct {
 	Metadata   map[string]string `json:"metadata" bson:"metadata"`
 }
 
-func (l *Log) GetBson() ([]byte, error) {
+func (l *Log) GetBsonEncoding() ([]byte, error) {
 	bsonData, err := bson.Marshal(l)
 	if err != nil {
 		log.Println("Failed to marshal log entry to BSON:", err)

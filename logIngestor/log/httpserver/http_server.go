@@ -1,11 +1,11 @@
 package httpserver
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"logIngestor/logIngestor/log/database"
 	"logIngestor/logIngestor/log/logtype"
+	"logIngestor/logIngestor/log/validate"
 	"net/http"
 	"strings"
 
@@ -23,6 +23,7 @@ const (
 type HTTPServer struct {
 	ListenAddr string
 	DbClient   database.ClientDB
+	Decoder    *validate.Decoder
 }
 
 func NewHTTPServer(listenAddr string, mongoClient *database.MongoClient) *HTTPServer {
@@ -30,6 +31,7 @@ func NewHTTPServer(listenAddr string, mongoClient *database.MongoClient) *HTTPSe
 	return &HTTPServer{
 		ListenAddr: listenAddr,
 		DbClient:   mongoClient,
+		Decoder:    validate.NewDecoder(),
 	}
 }
 
@@ -58,21 +60,18 @@ func (s *HTTPServer) indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPServer) AddLogHandler(w http.ResponseWriter, r *http.Request) {
 	// Implement logic to add logs
-
-	// @TODO add a validator to validate the log entry
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", StatusMethodNotAllowed)
 		return
 	}
 	logEntry := &logtype.Log{}
-	err := json.NewDecoder(r.Body).Decode(logEntry)
-	if err != nil {
+
+	if err := s.Decoder.Decode(r.Body, logEntry); err != nil {
 		http.Error(w, "Invalid request payload: "+err.Error(), StatusBadRequest)
 		return
 	}
-	fmt.Println(logEntry)
-	err = s.DbClient.AddOne(logEntry)
-	if err != nil {
+
+	if err := s.DbClient.AddOne(logEntry); err != nil {
 		http.Error(w, "Failed to retrieve logs from the database", StatusFailedDependency)
 		return
 	}
